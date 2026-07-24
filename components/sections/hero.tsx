@@ -135,7 +135,8 @@ export function Hero({ ready }: { ready: boolean }) {
             text={'Stop managing manual chaos.\nScale with custom AI automation.'}
             className="max-w-5xl text-balance text-3xl font-semibold uppercase leading-[1.08] tracking-tight sm:text-4xl md:text-5xl lg:text-[3.5rem]"
             stagger={0.06}
-            start="top 95%"
+            play={ready}
+            delay={0.4}
           />
 
           <p
