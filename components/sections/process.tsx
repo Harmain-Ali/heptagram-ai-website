@@ -38,7 +38,7 @@ export function Process() {
             </Reveal>
             <BlurText
               as="h2"
-              text={'A build once,\nown forever process.'}
+              text={'From your problem\nto a system you own.'}
               className="text-balance text-3xl font-semibold uppercase leading-[1.1] tracking-tight md:text-5xl"
               stagger={0.05}
             />

@@ -72,6 +72,8 @@ export function BlurText({
   wordClassName,
   start = 'top 85%',
   stagger = 0.08,
+  delay = 0,
+  play,
 }: {
   text: string
   as?: ElementType
@@ -79,8 +81,16 @@ export function BlurText({
   wordClassName?: string
   start?: string
   stagger?: number
+  delay?: number
+  /**
+   * Controlled mode. When provided, the reveal is gated on this flag
+   * instead of a ScrollTrigger — useful for above-the-fold headings that
+   * should animate only once an intro/loading sequence has finished.
+   */
+  play?: boolean
 }) {
   const ref = useRef<HTMLElement>(null)
+  const controlled = play !== undefined
 
   useEffect(() => {
     const el = ref.current
@@ -88,6 +98,13 @@ export function BlurText({
     gsap.registerPlugin(ScrollTrigger)
 
     const words = el.querySelectorAll<HTMLElement>('[data-word]')
+
+    // In controlled mode, keep the words hidden until `play` turns true.
+    if (controlled && !play) {
+      gsap.set(words, { autoAlpha: 0, filter: 'blur(12px)', yPercent: 60 })
+      return
+    }
+
     const ctx = gsap.context(() => {
       gsap.fromTo(
         words,
@@ -97,15 +114,16 @@ export function BlurText({
           filter: 'blur(0px)',
           yPercent: 0,
           duration: 0.9,
+          delay,
           ease: 'power3.out',
           stagger,
-          scrollTrigger: { trigger: el, start },
+          ...(controlled ? {} : { scrollTrigger: { trigger: el, start } }),
         },
       )
     })
 
     return () => ctx.revert()
-  }, [start, stagger])
+  }, [start, stagger, delay, controlled, play])
 
   const lines = text.split('\n')
 
