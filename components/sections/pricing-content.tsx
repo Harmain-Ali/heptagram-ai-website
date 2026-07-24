@@ -1,16 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import {
-  Check,
-  MessageSquareText,
-  Hammer,
-  FlaskConical,
-  BadgeDollarSign,
-  Sparkles,
-} from 'lucide-react'
+import { Check, Hammer, Sparkles, Calculator } from 'lucide-react'
 import { Reveal, BlurText } from '@/components/interactive/reveal'
 import { MagneticButton } from '@/components/interactive/magnetic-button'
+import { CustomEstimator } from '@/components/sections/custom-estimator'
 
 /**
  * Subscription products. Prices are placeholders — edit the `monthly`
@@ -73,29 +67,6 @@ const PRODUCTS = [
   },
 ]
 
-const CUSTOM_STEPS = [
-  {
-    icon: MessageSquareText,
-    title: 'Tell us your problem',
-    body: 'Share your biggest operational bottleneck in a zero-risk consultation. No contracts to begin.',
-  },
-  {
-    icon: Hammer,
-    title: 'We build the solution',
-    body: 'We scope, design, and engineer a bespoke AI system built specifically for your workflow.',
-  },
-  {
-    icon: FlaskConical,
-    title: 'Test it',
-    body: 'Put the system to work against your real processes and confirm it solves the problem end-to-end.',
-  },
-  {
-    icon: BadgeDollarSign,
-    title: 'Pay only if satisfied',
-    body: 'Happy with the build? You pay once and own the finished product outright — no subscription.',
-  },
-]
-
 function savingsPct(monthly: number, yearly: number) {
   return Math.round(((monthly * 12 - yearly) / (monthly * 12)) * 100)
 }
@@ -103,11 +74,23 @@ function savingsPct(monthly: number, yearly: number) {
 export function PricingContent() {
   const [active, setActive] = useState(1) // BD Automation by default
   const [yearly, setYearly] = useState(false)
+  const [qty, setQty] = useState(30)
+  const [features, setFeatures] = useState(0)
 
   const product = PRODUCTS[active]
   const price = yearly ? product.yearly : product.monthly
   const save = savingsPct(product.monthly, product.yearly)
   const fullYearAtMonthly = product.monthly * 12
+
+  // Calculator — recurring subscription cost + one-time custom features.
+  const safeQty = Number.isFinite(qty) && qty > 0 ? Math.floor(qty) : 0
+  const safeFeatures =
+    Number.isFinite(features) && features > 0 ? Math.floor(features) : 0
+  const recurringTotal = price * safeQty
+  const featuresTotal = safeFeatures * 100
+  const yearlySavings = yearly
+    ? (product.monthly * 12 - product.yearly) * safeQty
+    : 0
 
   return (
     <section className="relative pt-36 pb-28 md:pt-44 md:pb-40">
@@ -262,6 +245,141 @@ export function PricingContent() {
               </p>
             </div>
 
+            {/* Cost calculator */}
+            <div className="mt-6 rounded-2xl border border-primary/20 bg-primary/[0.04] p-6 md:p-7">
+              <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-primary">
+                <Calculator className="h-4 w-4" />
+                Estimate your cost
+              </div>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                Enter how many {product.unit}s you need to run and we&apos;ll
+                calculate your {yearly ? 'annual' : 'monthly'} total.
+              </p>
+
+              <div className="mt-5 grid gap-4 sm:grid-cols-2">
+                <label className="flex flex-col gap-2">
+                  <span className="text-xs uppercase tracking-widest text-muted-foreground">
+                    Number of {product.unit}s
+                  </span>
+                  <div className="flex items-center rounded-xl border border-white/15 bg-background/60 focus-within:border-primary/60">
+                    <button
+                      type="button"
+                      aria-label={`Decrease ${product.unit}s`}
+                      onClick={() => setQty((q) => Math.max(0, (q || 0) - 1))}
+                      className="px-3 py-2.5 text-lg text-muted-foreground transition-colors hover:text-primary"
+                    >
+                      &minus;
+                    </button>
+                    <input
+                      type="number"
+                      inputMode="numeric"
+                      min={0}
+                      value={Number.isFinite(qty) ? qty : ''}
+                      onChange={(e) => setQty(Number.parseInt(e.target.value, 10))}
+                      className="w-full min-w-0 bg-transparent px-1 py-2.5 text-center text-lg font-semibold tabular-nums outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                    />
+                    <button
+                      type="button"
+                      aria-label={`Increase ${product.unit}s`}
+                      onClick={() => setQty((q) => (q || 0) + 1)}
+                      className="px-3 py-2.5 text-lg text-muted-foreground transition-colors hover:text-primary"
+                    >
+                      +
+                    </button>
+                  </div>
+                </label>
+
+                <label className="flex flex-col gap-2">
+                  <span className="text-xs uppercase tracking-widest text-muted-foreground">
+                    Custom features
+                  </span>
+                  <div className="flex items-center rounded-xl border border-white/15 bg-background/60 focus-within:border-primary/60">
+                    <button
+                      type="button"
+                      aria-label="Decrease custom features"
+                      onClick={() =>
+                        setFeatures((f) => Math.max(0, (f || 0) - 1))
+                      }
+                      className="px-3 py-2.5 text-lg text-muted-foreground transition-colors hover:text-primary"
+                    >
+                      &minus;
+                    </button>
+                    <input
+                      type="number"
+                      inputMode="numeric"
+                      min={0}
+                      value={Number.isFinite(features) ? features : ''}
+                      onChange={(e) =>
+                        setFeatures(Number.parseInt(e.target.value, 10))
+                      }
+                      className="w-full min-w-0 bg-transparent px-1 py-2.5 text-center text-lg font-semibold tabular-nums outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                    />
+                    <button
+                      type="button"
+                      aria-label="Increase custom features"
+                      onClick={() => setFeatures((f) => (f || 0) + 1)}
+                      className="px-3 py-2.5 text-lg text-muted-foreground transition-colors hover:text-primary"
+                    >
+                      +
+                    </button>
+                  </div>
+                </label>
+              </div>
+
+              {/* Breakdown */}
+              <dl className="mt-5 flex flex-col gap-2 text-sm">
+                <div className="flex items-center justify-between">
+                  <dt className="text-muted-foreground">
+                    {safeQty} {product.unit}
+                    {safeQty === 1 ? '' : 's'} &times; ${price}
+                    {yearly ? '/yr' : '/mo'}
+                  </dt>
+                  <dd className="font-semibold tabular-nums">
+                    ${recurringTotal.toLocaleString()}
+                    {yearly ? '/yr' : '/mo'}
+                  </dd>
+                </div>
+                {safeFeatures > 0 && (
+                  <div className="flex items-center justify-between">
+                    <dt className="text-muted-foreground">
+                      {safeFeatures} custom feature
+                      {safeFeatures === 1 ? '' : 's'} &times; $100 (one-time)
+                    </dt>
+                    <dd className="font-semibold tabular-nums">
+                      +${featuresTotal.toLocaleString()}
+                    </dd>
+                  </div>
+                )}
+                {yearly && yearlySavings > 0 && (
+                  <div className="flex items-center justify-between text-primary">
+                    <dt>Annual savings vs. monthly</dt>
+                    <dd className="font-semibold tabular-nums">
+                      &minus;${yearlySavings.toLocaleString()}
+                    </dd>
+                  </div>
+                )}
+              </dl>
+
+              <div className="mt-4 flex items-end justify-between border-t border-white/10 pt-4">
+                <span className="text-xs uppercase tracking-widest text-muted-foreground">
+                  Estimated total
+                </span>
+                <span className="text-right">
+                  <span className="text-3xl font-bold tabular-nums tracking-tight">
+                    ${recurringTotal.toLocaleString()}
+                  </span>
+                  <span className="text-sm text-muted-foreground">
+                    {yearly ? '/yr' : '/mo'}
+                  </span>
+                  {safeFeatures > 0 && (
+                    <span className="block text-xs text-muted-foreground">
+                      + ${featuresTotal.toLocaleString()} one-time setup
+                    </span>
+                  )}
+                </span>
+              </div>
+            </div>
+
             {/* Features / notes */}
             <ul className="mt-6 flex flex-col gap-3 text-sm">
               {[
@@ -305,43 +423,8 @@ export function PricingContent() {
               satisfied.
             </p>
 
-            {/* Steps */}
-            <ol className="mt-8 flex flex-col gap-4">
-              {CUSTOM_STEPS.map((s, i) => (
-                <li
-                  key={s.title}
-                  className="flex items-start gap-4 rounded-2xl border border-white/10 bg-background/40 p-4 md:p-5"
-                >
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary">
-                    <s.icon className="h-5 w-5" />
-                  </span>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono text-xs text-primary">
-                        {String(i + 1).padStart(2, '0')}
-                      </span>
-                      <h3 className="text-base font-semibold uppercase tracking-tight">
-                        {s.title}
-                      </h3>
-                    </div>
-                    <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-                      {s.body}
-                    </p>
-                  </div>
-                </li>
-              ))}
-            </ol>
-
-            {/* Pricing note */}
-            <div className="mt-8 rounded-2xl border border-white/10 bg-background/40 p-6 text-center md:p-8">
-              <p className="text-3xl font-bold tracking-tight md:text-4xl">
-                Custom quote
-              </p>
-              <p className="mt-2 text-sm text-muted-foreground">
-                Priced on project scope & requirements — one-time payment, no
-                subscription.
-              </p>
-            </div>
+            {/* AI problem-analysis estimator */}
+            <CustomEstimator />
 
             <div className="mt-auto pt-8">
               <MagneticButton
